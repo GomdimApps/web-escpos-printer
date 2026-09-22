@@ -31,7 +31,10 @@ const qzPrinterSelect = document.getElementById('qzPrinterSelect')
 const qzConnectBtn = document.getElementById('qzConnectBtn')
 const printBtn = document.getElementById('printBtn')
 const testPrintBtn = document.getElementById('testPrintBtn')
+const diagnosticPatternBtn = document.getElementById('diagnosticPatternBtn')
+const diagnosticPatternTinyBtn = document.getElementById('diagnosticPatternTinyBtn')
 const paperWidthSelect = document.getElementById('paperWidthSelect')
+const imageModeSelect = document.getElementById('imageModeSelect')
 const textInput = document.getElementById('textInput')
 const alignSelect = document.getElementById('alignSelect')
 const feedBeforeCutInput = document.getElementById('feedBeforeCutInput')
@@ -118,6 +121,8 @@ printer.onStatusChange((event) => {
   disconnectBtn.disabled = !connected
   printBtn.disabled = !connected
   testPrintBtn.disabled = !connected
+  diagnosticPatternBtn.disabled = !connected
+  diagnosticPatternTinyBtn.disabled = !connected
   connectBtn.disabled = connected || !supported
   connectCompatBtn.disabled = connected || !supported
   connectManualProfileBtn.disabled = connected || !supported
@@ -249,6 +254,10 @@ function selectedPaperWidth() {
   return paperWidthSelect.value || undefined
 }
 
+function selectedImageMode() {
+  return imageModeSelect.value || undefined
+}
+
 function selectedFeedBeforeCut() {
   const value = feedBeforeCutInput.value.trim()
   return value === '' ? undefined : Number(value)
@@ -258,6 +267,7 @@ testPrintBtn.onclick = async () => {
   try {
     await printer.printReceipt({
       paperWidth: selectedPaperWidth(),
+      imageMode: selectedImageMode(),
       content: [
         { type: 'text', value: 'TEST PRINT', align: 'center', bold: true },
         { type: 'rule' },
@@ -274,6 +284,59 @@ testPrintBtn.onclick = async () => {
     log(`test print failed: ${error.message}`)
   }
 }
+
+/**
+ * Vertical black/white stripe test pattern, stacked in bands of decreasing
+ * stripe width top to bottom. Used to visually pin down *how* a printer
+ * garbles image output: wherever adjacent stripes fuse or shift on paper
+ * marks the exact byte/column period the corruption happens at, which a
+ * real photo can't tell you as precisely.
+ */
+function buildStripePatternDataUrl(width, bandHeight, stripeWidths) {
+  const height = bandHeight * stripeWidths.length
+
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d')
+  ctx.fillStyle = '#fff'
+  ctx.fillRect(0, 0, width, height)
+  ctx.fillStyle = '#000'
+  stripeWidths.forEach((stripeWidth, bandIndex) => {
+    const y = bandIndex * bandHeight
+    for (let x = 0; x < width; x += stripeWidth * 2) {
+      ctx.fillRect(x, y, stripeWidth, bandHeight)
+    }
+  })
+  return canvas.toDataURL('image/png')
+}
+
+async function printDiagnosticPattern(label, dataUrl) {
+  try {
+    await printer.printReceipt({
+      paperWidth: selectedPaperWidth(),
+      imageMode: selectedImageMode(),
+      content: [
+        { type: 'text', value: 'DIAGNOSTIC PATTERN', align: 'center', bold: true },
+        { type: 'text', value: label, align: 'center' },
+        // minWidth: 1 — bypasses the usual 224px imageMinWidth floor so the
+        // "tiny" pattern actually prints small instead of being upscaled.
+        { type: 'image', source: dataUrl, align: 'center', minWidth: 1 },
+        { type: 'newline', lines: 2 },
+      ],
+      cut: 'full',
+    })
+    log('diagnostic pattern sent')
+  } catch (error) {
+    log(`diagnostic pattern failed: ${error.message}`)
+  }
+}
+
+diagnosticPatternBtn.onclick = () =>
+  printDiagnosticPattern('256px wide, bands top to bottom: 16/8/4/2/1px stripes', buildStripePatternDataUrl(256, 16, [16, 8, 4, 2, 1]))
+
+diagnosticPatternTinyBtn.onclick = () =>
+  printDiagnosticPattern('64px wide, bands top to bottom: 8/4/2/1px stripes', buildStripePatternDataUrl(64, 8, [8, 4, 2, 1]))
 
 function buildJobFromForm() {
   const lines = textInput.value.split('\n').map((l) => l.trim()).filter(Boolean)
@@ -293,7 +356,9 @@ function buildJobFromForm() {
   if (ruleCheck.checked || ruleSafeModeCheck.checked) content.push({ type: 'rule', safeMode: ruleSafeModeCheck.checked })
   content.push({ type: 'newline', lines: 2 })
 
-  return content.length > 0 ? { paperWidth: selectedPaperWidth(), feedBeforeCut: selectedFeedBeforeCut(), content, cut: 'full' } : null
+  return content.length > 0
+    ? { paperWidth: selectedPaperWidth(), imageMode: selectedImageMode(), feedBeforeCut: selectedFeedBeforeCut(), content, cut: 'full' }
+    : null
 }
 
 printBtn.onclick = async () => {

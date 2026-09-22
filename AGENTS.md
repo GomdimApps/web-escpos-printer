@@ -118,6 +118,11 @@ time — one line each, full report in `docs/notes/`.
 12. **A vendor's own "virtual COM port" driver (e.g. Epson's TM Virtual
     Port tool) isn't listed by Web Serial's picker** — not a filter bug.
     → [docs/notes/12](docs/notes/12-vendor-virtual-com-drivers-not-listed.md)
+13. **Image printing over Bluetooth is unreliable on the MTP-II/MP58C7
+    clone family** — corrupted/banded output regardless of `imageMode`,
+    BLE chunk size or pacing; use `transport: 'serial'`/`'usb'` for
+    images on this hardware instead.
+    → [docs/notes/13](docs/notes/13-mtp-ii-bluetooth-image-corruption.md)
 
 ## Coding conventions
 
