@@ -5,6 +5,13 @@ import { pixelFixture } from '../helpers/fixtures'
 import { buildBytes } from '../helpers/receipt'
 import { asciiBytes, containsBytes } from '../helpers/assertBytes'
 
+// ESC 3 36 (custom line spacing) + ESC * 33 (24-dot band) — the legacy
+// 'column' image format's command headers.
+const COLUMN_LINE_SPACING_HEADER = [27, 51, 36]
+const COLUMN_BAND_HEADER = [27, 42, 33]
+// GS v 0 <m=0> — the single-shot 'raster' image format's command header.
+const RASTER_HEADER = [29, 118, 48, 0]
+
 describe('loadImageFromSource', () => {
   it('loads a base64 dataURL source into a real HTMLImageElement', () =>
     withDom(async () => {
@@ -102,5 +109,26 @@ describe('image element, end-to-end through buildReceiptBytes()', () => {
       }
       expect(warned, 'expected applyImageElement to console.warn on a degenerate image').toBe(true)
       expect(containsBytes(bytes, asciiBytes('still here'))).toBe(true)
+    }))
+
+  // Regression test for the MP58C7 (58mm clone) bug: the encoder defaults
+  // to the legacy 'column' image format, which some clone firmware
+  // reassembles wrong (banded/ghosted output) — imageMode: 'raster' is the
+  // documented escape hatch. See AGENTS.md gotcha list / docs/notes.
+  it('defaults to the legacy column image format (no imageMode set)', () =>
+    withDom(async () => {
+      const fixture = pixelFixture(32, 32)
+      const bytes = await buildBytes([{ type: 'image', source: fixture.dataUrl }])
+      expect(containsBytes(bytes, COLUMN_LINE_SPACING_HEADER)).toBe(true)
+      expect(containsBytes(bytes, COLUMN_BAND_HEADER)).toBe(true)
+      expect(containsBytes(bytes, RASTER_HEADER)).toBe(false)
+    }))
+
+  it("imageMode: 'raster' sends a single GS v 0 command instead of the column band sequence", () =>
+    withDom(async () => {
+      const fixture = pixelFixture(32, 32)
+      const bytes = await buildBytes([{ type: 'image', source: fixture.dataUrl }], { imageMode: 'raster' })
+      expect(containsBytes(bytes, RASTER_HEADER)).toBe(true)
+      expect(containsBytes(bytes, COLUMN_LINE_SPACING_HEADER)).toBe(false)
     }))
 })

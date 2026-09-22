@@ -23,6 +23,15 @@ export interface WebEscposPrinterConfig {
   codepageMapping?: unknown
   /** Known printer model (e.g. 'epson-tm-t88vi') so ReceiptPrinterEncoder can auto-configure sensible defaults for it. */
   printerModel?: string
+  /**
+   * Raster image wire format: 'column' (default) sends the legacy ESC *
+   * 24-dot band sequence; 'raster' sends a single GS v 0 command. The
+   * encoder only picks 'raster' on its own for a recognized `printerModel`
+   * — set this explicitly for unrecognized/clone printers whose firmware
+   * mishandles the band format's line-spacing dance (confirmed cause of
+   * banded/ghosted image output on at least one 58mm clone).
+   */
+  imageMode?: 'column' | 'raster'
   /** Default threshold (0-255) for image dithering. */
   imageThreshold: number
   /** Maximum width, in pixels, to resize images to before printing. */
@@ -183,6 +192,8 @@ export interface PrintJob {
   language?: PrinterLanguage
   codepageMapping?: unknown
   printerModel?: string
+  /** Per-job override of WebEscposPrinterConfig.imageMode. */
+  imageMode?: 'column' | 'raster'
   /** Paper cut at the end. `false` to skip cutting. Default: 'full'. */
   cut?: 'full' | 'partial' | false
   /** Blank lines fed before the cut. See WebEscposPrinterConfig.feedBeforeCut. */

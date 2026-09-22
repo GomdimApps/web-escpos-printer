@@ -145,6 +145,10 @@
         <span id="statusPill" class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"><span id="status">idle</span></span>
         <button id="disconnectBtn" disabled class="rounded-lg border border-gray-200 dark:border-neutral-800 px-4 py-2 text-sm font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Disconnect</button>
         <button id="testPrintBtn" disabled class="rounded-lg border border-gray-200 dark:border-neutral-800 px-4 py-2 text-sm font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Test Print</button>
+        <button id="diagnosticPatternBtn" disabled title="Prints a known vertical-stripe test pattern (16/8/4/2/1px bands, 256px wide) — for debugging garbled/banded image output"
+          class="rounded-lg border border-gray-200 dark:border-neutral-800 px-4 py-2 text-sm font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Print diagnostic pattern</button>
+        <button id="diagnosticPatternTinyBtn" disabled title="Same test pattern at 1/8th the size (64px wide, 8/4/2/1px bands) — tests whether corruption depends on payload size"
+          class="rounded-lg border border-gray-200 dark:border-neutral-800 px-4 py-2 text-sm font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Print diagnostic pattern (tiny)</button>
       </div>
     </div>
 
@@ -176,6 +180,14 @@
           <input type="number" id="feedBeforeCutInput" min="0" placeholder="Default (4)"
             title="Blank lines fed before the physical cut, so the cutter doesn't slice through the last printed content"
             class="w-full bg-gray-50 dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-2.5 py-2 text-sm" />
+        </div>
+        <div class="flex-1">
+          <label for="imageModeSelect" class="block mb-1 text-sm font-semibold">Image mode</label>
+          <select id="imageModeSelect" title="Raster image wire format — try 'raster' if images print corrupted/banded on a clone printer"
+            class="w-full bg-gray-50 dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-2.5 py-2 text-sm">
+            <option value="" selected>Default (column)</option>
+            <option value="raster">raster</option>
+          </select>
         </div>
       </div>
 

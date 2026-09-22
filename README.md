@@ -163,6 +163,12 @@ Find `service`/`characteristic` with a BLE scanner app (nRF Connect,
 LightBlue) against the printer — most clones use a vendor-specific
 service.
 
+Printing images over Bluetooth on an MTP-II/MP58C7-family clone (also
+sold as HPRT HM-A200U, PixPos MP58C7, ...)? Confirmed unreliable
+regardless of `imageMode`/chunk size/pacing — use `transport: 'serial'`
+or `'usb'` for image content on that hardware instead. See
+[docs/notes/13](docs/notes/13-mtp-ii-bluetooth-image-corruption.md).
+
 ### Web Serial (USB cable, recommended default)
 
 Reliable across Windows/Linux/macOS, no extra software. Chrome/Edge
@@ -226,6 +232,7 @@ const printer = new WebEscposPrinter({
   language: 'star-prnt',         // 'esc-pos' | 'star-prnt' | 'star-line', default 'esc-pos'
   codepageMapping: 'xprinter',   // for non-standard clone printers
   printerModel: 'epson-tm-t88vi',// lets ReceiptPrinterEncoder auto-configure known-model defaults
+  imageMode: 'raster',           // 'column' (default) | 'raster' — force GS v 0 for clone printers whose firmware mishandles the legacy ESC * band format
   feedBeforeCut: 4,              // blank lines fed before the cut, default 4
 })
 

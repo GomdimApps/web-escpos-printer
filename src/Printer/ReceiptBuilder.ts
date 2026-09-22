@@ -32,6 +32,7 @@ export async function buildReceiptBytes(job: PrintJob, defaults: WebEscposPrinte
   // these keys are present at all, even with value `undefined`.
   const codepageMapping = job.codepageMapping ?? defaults.codepageMapping
   const printerModel = job.printerModel ?? defaults.printerModel
+  const imageMode = job.imageMode ?? defaults.imageMode
 
   const encoder = new ReceiptPrinterEncoder({
     columns,
@@ -41,6 +42,7 @@ export async function buildReceiptBytes(job: PrintJob, defaults: WebEscposPrinte
     feedBeforeCut: job.feedBeforeCut ?? defaults.feedBeforeCut,
     ...(codepageMapping !== undefined ? { codepageMapping } : {}),
     ...(printerModel !== undefined ? { printerModel } : {}),
+    ...(imageMode !== undefined ? { imageMode } : {}),
   })
 
   encoder.initialize()
